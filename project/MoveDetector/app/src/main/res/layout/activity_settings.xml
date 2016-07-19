@@ -27,14 +27,16 @@
             android:layout_alignParentEnd="true"
             android:layout_alignParentRight="true"
             android:layout_marginBottom="200dp"
-            android:text="New ToggleButton" />
+            android:text="New ToggleButton"
+            android:onClick="serviceToggle"/>
 
         <Button
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:hint="@string/hintSaveButton"
             android:layout_alignParentBottom="true"
-            android:layout_alignParentLeft="true"/>
+            android:layout_alignParentLeft="true"
+            android:onClick="saveSettings"/>
 
         <LinearLayout
             android:layout_width="match_parent"
@@ -66,7 +68,7 @@
                 android:paddingRight="@dimen/activity_horizontal_margin"
                 android:paddingTop="40dp"
                 android:text="@string/hintSeekBar"
-                android:textSize="19sp" />
+                android:textSize="19sp"/>
 
             <SeekBar
                 android:id="@+id/SettingsSensitivity"

@@ -3,4 +3,11 @@
     <string name="hintTelephone">Numer telefonu</string>
     <string name="hintSeekBar">Czułość</string>
     <string name="hintSaveButton">Save</string>
+    <string name="statusServiceOn">Serwis został włączony.</string>
+    <string name="statusServiceOff">Serwis został wyłączony.</string>
+    <string name="validationWrongNumber">Zły numer telefonu.</string>
+    <string name="validationOK">Ustawienia zostały zapisane.</string>
+    <string name="keyTelNum">TelephoneNumber</string>
+    <string name="keySensitivity">Sensitivity</string>
+    <string name="defaultPhoneNumber">0</string>
 </resources>
