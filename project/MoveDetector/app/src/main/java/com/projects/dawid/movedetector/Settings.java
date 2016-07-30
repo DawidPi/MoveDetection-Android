@@ -70,6 +70,8 @@ public class Settings extends Activity {
     }
 
     private void stopService() {
+        Intent serviceIntent = new Intent(this, MotionSensorService.class);
+        stopService(serviceIntent);
     }
 
     private void startService() {

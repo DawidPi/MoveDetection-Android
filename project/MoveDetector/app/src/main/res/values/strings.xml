@@ -10,4 +10,6 @@
     <string name="keyTelNum">TelephoneNumber</string>
     <string name="keySensitivity">Sensitivity</string>
     <string name="defaultPhoneNumber">0</string>
+    <string name="NotificationTitle">Wykrywacz drgań</string>
+    <string name="NotificationText">Włączony</string>
 </resources>

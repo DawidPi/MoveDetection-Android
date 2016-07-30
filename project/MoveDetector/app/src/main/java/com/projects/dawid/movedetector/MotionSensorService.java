@@ -1,8 +1,20 @@
 package com.projects.dawid.movedetector;
 
+import android.Manifest;
 import android.app.IntentService;
+import android.app.Notification;
+import android.app.PendingIntent;
+import android.app.Service;
 import android.content.Intent;
-import android.content.Context;
+import android.content.pm.PackageManager;
+import android.hardware.Sensor;
+import android.hardware.SensorEvent;
+import android.hardware.SensorEventListener;
+import android.hardware.SensorManager;
+import android.net.Uri;
+import android.os.IBinder;
+import android.support.annotation.Nullable;
+import android.support.v4.app.ActivityCompat;
 import android.util.Log;
 import android.widget.Toast;
 
@@ -13,80 +25,87 @@ import android.widget.Toast;
  * TODO: Customize class - update intent actions, extra parameters and static
  * helper methods.
  */
-public class MotionSensorService extends IntentService {
+public class MotionSensorService extends Service implements SensorEventListener {
 
     private static final String TAG = "MotionService";
+    private SensorManager mSensorManager;
+    private Sensor mAccelerometer;
 
-    // TODO: Rename actions, choose action names that describe tasks that this
-    // IntentService can perform, e.g. ACTION_FETCH_NEW_ITEMS
-    private static final String ACTION_FOO = "com.projects.dawid.movedetector.action.FOO";
-    private static final String ACTION_BAZ = "com.projects.dawid.movedetector.action.BAZ";
+    public static final String IN_TEL_NUM = "com.projects.dawid.movedetector.IN_TEL_NUM";
+    public static final String IN_SENSITIVITY = "com.projects.dawid.movedetector.IN_SENSITIVITY";
 
-    // TODO: Rename parameters
-    public static final String IN_TEL_NUM = "com.projects.dawid.movedetector.extra.IN_TEL_NUM";
-    public static final String IN_SENSITIVITY = "com.projects.dawid.movedetector.extra.IN_SENSITIVITY";
+    private String mTelephoneNumber;
+    private int mSensitivity;
 
-    public MotionSensorService() {
-        super("MotionSensorService");
-    }
 
-    /**
-     * Starts this service to perform action Foo with the given parameters. If
-     * the service is already performing a task this action will be queued.
-     *
-     * @see IntentService
-     */
-    // TODO: Customize helper method
-    public static void startActionFoo(Context context, String param1, String param2) {
-        Intent intent = new Intent(context, MotionSensorService.class);
-        intent.setAction(ACTION_FOO);
-        intent.putExtra(IN_TEL_NUM, param1);
-        intent.putExtra(IN_SENSITIVITY, param2);
-        context.startService(intent);
-    }
-
-    /**
-     * Starts this service to perform action Baz with the given parameters. If
-     * the service is already performing a task this action will be queued.
-     *
-     * @see IntentService
-     */
-    // TODO: Customize helper method
-    public static void startActionBaz(Context context, String param1, String param2) {
-        Intent intent = new Intent(context, MotionSensorService.class);
-        intent.setAction(ACTION_BAZ);
-        intent.putExtra(IN_TEL_NUM, param1);
-        intent.putExtra(IN_SENSITIVITY, param2);
-        context.startService(intent);
+    @Nullable
+    @Override
+    public IBinder onBind(Intent intent) {
+        return null;
     }
 
     @Override
-    protected void onHandleIntent(Intent intent) {
-        if (intent != null) {
-            String telephoneNumber = intent.getStringExtra(IN_TEL_NUM);
-            int sensitivity = intent.getIntExtra(IN_SENSITIVITY, 0);
+    public int onStartCommand(Intent intent, int flags, int startId) {
+        Notification notification = new Notification.Builder(getApplicationContext())
+                .setSmallIcon(R.mipmap.ic_launcher)
+                .setContentTitle(getText(R.string.NotificationTitle))
+                .setContentText(getText(R.string.NotificationText))
+                .setOngoing(true)
+                .build();
 
-            Log.v(TAG, "Telephone number: " + telephoneNumber);
-            Log.v(TAG, "Sensitivity: " + sensitivity);
-            Toast.makeText(this, "Service successfully started", Toast.LENGTH_LONG).show();
+        mTelephoneNumber = intent.getStringExtra(IN_TEL_NUM);
+        mSensitivity = intent.getIntExtra(IN_SENSITIVITY, 0);
+
+        if (mSensorManager == null) {
+            mSensorManager = (SensorManager) getSystemService(SENSOR_SERVICE);
+            mAccelerometer = mSensorManager.getDefaultSensor(Sensor.TYPE_LINEAR_ACCELERATION);
+            mSensorManager.registerListener(this, mAccelerometer, SensorManager.SENSOR_DELAY_NORMAL);
         }
+
+        Intent notificationIntent = new Intent(this, Settings.class);
+        PendingIntent pendingIntent = PendingIntent.getActivity(this, 0, notificationIntent, 0);
+
+        startForeground(1234, notification);
+
+        return START_STICKY;
     }
 
-    /**
-     * Handle action Foo in the provided background thread with the provided
-     * parameters.
-     */
-    private void handleActionFoo(String param1, String param2) {
-        // TODO: Handle action Foo
-        throw new UnsupportedOperationException("Not yet implemented");
+    @Override
+    public void onSensorChanged(SensorEvent sensorEvent) {
+        double xAcc = Math.abs(sensorEvent.values[0]);
+        double yAcc = Math.abs(sensorEvent.values[1]);
+        double zAcc = Math.abs(sensorEvent.values[2]);
+
+        double acceleration = Math.sqrt(xAcc * xAcc + yAcc * yAcc + zAcc * zAcc);
+
+        Log.v(TAG, "Acceleration value: " + acceleration);
+
+        int compareValue = 10 - ((mSensitivity / 10) -1);
+        Log.v(TAG, "Sensitivity: " + mSensitivity);
+        Log.v(TAG, "Compare value: " + compareValue);
+
+        if (acceleration >= compareValue) {
+            makeACall();
+            mSensorManager.unregisterListener(this);
+            stopSelf();
+        }
+
     }
 
-    /**
-     * Handle action Baz in the provided background thread with the provided
-     * parameters.
-     */
-    private void handleActionBaz(String param1, String param2) {
-        // TODO: Handle action Baz
-        throw new UnsupportedOperationException("Not yet implemented");
+    private void makeACall() {
+        Intent callIntent = new Intent(Intent.ACTION_CALL);
+        callIntent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+        callIntent.addFlags(Intent.FLAG_FROM_BACKGROUND);
+        callIntent.setData(Uri.parse("tel:" + mTelephoneNumber));
+        if (ActivityCompat.checkSelfPermission(this, Manifest.permission.CALL_PHONE) != PackageManager.PERMISSION_GRANTED) {
+            Toast.makeText(this, "Brak uprawnień do wykonywania połączeń", Toast.LENGTH_LONG).show();
+            return;
+        }
+        startActivity(callIntent);
+    }
+
+    @Override
+    public void onAccuracyChanged(Sensor sensor, int i) {
+        Log.v(TAG, "newAccuracy: " +i);
     }
 }
