@@ -1,6 +1,7 @@
 package com.projects.dawid.movedetector;
 
 import android.app.Activity;
+import android.app.ActivityManager;
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
@@ -8,13 +9,14 @@ import android.os.Bundle;
 import android.telephony.PhoneNumberUtils;
 import android.util.Log;
 import android.view.View;
+import android.widget.Button;
 import android.widget.EditText;
 import android.widget.SeekBar;
 import android.widget.TextView;
 import android.widget.ToggleButton;
 import android.widget.Toast;
 
-public class Settings extends Activity {
+public class Settings extends Activity implements View.OnClickListener, SeekBar.OnSeekBarChangeListener {
 
     private static final String TAG = "Settings";
 
@@ -27,6 +29,49 @@ public class Settings extends Activity {
 
         Log.i(TAG, "Before restoringSavedSettings");
         restoreSavedSettings();
+
+        registerListener();
+
+        setOnOffButtonState();
+        saveButtonEnable(false);
+
+    }
+
+    private void registerListener() {
+        TextView telephoneView = (TextView) findViewById(R.id.SettingsTelephoneNumber);
+        SeekBar sensitivityBar = (SeekBar) findViewById(R.id.SettingsSensitivity);
+
+        telephoneView.setOnClickListener(this);
+        sensitivityBar.setOnSeekBarChangeListener(this);
+    }
+
+    private boolean isServiceActive(){
+        ActivityManager manager = (ActivityManager) getSystemService(Context.ACTIVITY_SERVICE);
+        for(ActivityManager.RunningServiceInfo serviceInfo : manager.getRunningServices(Integer.MAX_VALUE)){
+            if(MotionSensorService.class.getName().equals(serviceInfo.service.getClassName())){
+                Log.i(TAG, "Service is active");
+                return true;
+            }
+        }
+
+        Log.i(TAG, "Service is inactive");
+        return false;
+    }
+
+    @Override
+    protected void onResume() {
+        setOnOffButtonState();
+
+        super.onResume();
+    }
+
+    private void setOnOffButtonState() {
+        ToggleButton onOffButton = (ToggleButton) findViewById(R.id.SettingsEnableService);
+
+        if(isServiceActive()){
+            onOffButton.setSelected(true);
+        }
+        onOffButton.setSelected(false);
     }
 
     private void restoreSavedSettings() {
@@ -112,21 +157,47 @@ public class Settings extends Activity {
 
         preferencesSaver.putString(getString(R.string.keyTelNum), telephoneNumber);
         preferencesSaver.putInt(getString(R.string.keySensitivity), progress);
-        preferencesSaver.commit();
+        preferencesSaver.apply();
         Log.i(TAG, "Telephone and sensitivity saved.");
+        saveButtonEnable(false);
+
     }
 
     private boolean validateSettings() {
         EditText telephoneTextView = (EditText) findViewById(R.id.SettingsTelephoneNumber);
         String telephoneNumber = telephoneTextView.getText().toString();
-        PhoneNumberUtils phoneNumbersUtility = new PhoneNumberUtils();
         Log.v(TAG, "Number to check is: " + telephoneNumber);
 
-        if (phoneNumbersUtility.isGlobalPhoneNumber(telephoneNumber))
+        if (PhoneNumberUtils.isGlobalPhoneNumber(telephoneNumber))
             return true;
         else {
             Toast.makeText(this, getString(R.string.validationWrongNumber), Toast.LENGTH_LONG).show();
             return false;
         }
+    }
+
+    @Override
+    public void onClick(View view) {
+            saveButtonEnable(true);
+    }
+
+    private void saveButtonEnable(boolean state) {
+        Button saveButton =  (Button) findViewById(R.id.ButtonSave);
+        saveButton.setEnabled(state);
+    }
+
+    @Override
+    public void onProgressChanged(SeekBar seekBar, int i, boolean b) {
+        saveButtonEnable(true);
+    }
+
+    @Override
+    public void onStartTrackingTouch(SeekBar seekBar) {
+
+    }
+
+    @Override
+    public void onStopTrackingTouch(SeekBar seekBar) {
+
     }
 }
