@@ -19,17 +19,16 @@ import android.widget.Toast;
 public class Settings extends Activity implements View.OnClickListener, SeekBar.OnSeekBarChangeListener {
 
     private static final String TAG = "Settings";
+    private boolean mIsContinuousEnabled = false;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_settings);
 
-        Log.i(TAG, "Activity Settings created");
+        Log.i(TAG, "Creating Settings activity");
 
-        Log.i(TAG, "Before restoringSavedSettings");
         restoreSavedSettings();
-
         registerListener();
 
         setOnOffButtonState();
@@ -60,18 +59,33 @@ public class Settings extends Activity implements View.OnClickListener, SeekBar.
 
     @Override
     protected void onResume() {
+        super.onResume();
+        Log.i(TAG, "Settings resumed");
         setOnOffButtonState();
 
-        super.onResume();
+    }
+
+    @Override
+    protected void onRestart() {
+        super.onRestart();
+        Log.i(TAG, "Settings restarted");
+        setOnOffButtonState();
+    }
+
+    @Override
+    protected void onStart() {
+        super.onStart();
+        Log.i(TAG, "Settings started");
+        setOnOffButtonState();
     }
 
     private void setOnOffButtonState() {
         ToggleButton onOffButton = (ToggleButton) findViewById(R.id.SettingsEnableService);
 
         if(isServiceActive()){
-            onOffButton.setSelected(true);
+            onOffButton.setChecked(true);
         }
-        onOffButton.setSelected(false);
+        else onOffButton.setChecked(false);
     }
 
     private void restoreSavedSettings() {
@@ -85,6 +99,7 @@ public class Settings extends Activity implements View.OnClickListener, SeekBar.
                 getResources().getInteger(R.integer.defaultSensitivity));
         String phoneNumber = savedSettings.getString(getString(R.string.keyTelNum),
                 getString(R.string.defaultPhoneNumber));
+        mIsContinuousEnabled = savedSettings.getBoolean(getString(R.string.keyContinuousMode), false);
 
         Log.v(TAG, "Sensitivity read from Preferences: " + sensitivity);
         Log.v(TAG, "Phone number read from Preferences: " + phoneNumber);
@@ -97,6 +112,10 @@ public class Settings extends Activity implements View.OnClickListener, SeekBar.
             EditText telephoneTextView = (EditText) findViewById(R.id.SettingsTelephoneNumber);
             telephoneTextView.setText(phoneNumber, TextView.BufferType.EDITABLE);
         }
+
+        ToggleButton continuousModeButton = (ToggleButton) findViewById(R.id.ModeSetting);
+        if(mIsContinuousEnabled) continuousModeButton.setChecked(true);
+        else continuousModeButton.setChecked(false);
 
     }
 
@@ -129,6 +148,7 @@ public class Settings extends Activity implements View.OnClickListener, SeekBar.
         Intent serviceIntent = new Intent(this, MotionSensorService.class);
         serviceIntent.putExtra(MotionSensorService.IN_TEL_NUM, telephoneNumber);
         serviceIntent.putExtra(MotionSensorService.IN_SENSITIVITY, progress);
+        serviceIntent.putExtra(MotionSensorService.IN_CONTINUOUS, mIsContinuousEnabled);
 
         startService(serviceIntent);
     }
@@ -157,6 +177,7 @@ public class Settings extends Activity implements View.OnClickListener, SeekBar.
 
         preferencesSaver.putString(getString(R.string.keyTelNum), telephoneNumber);
         preferencesSaver.putInt(getString(R.string.keySensitivity), progress);
+        preferencesSaver.putBoolean(getString(R.string.keyContinuousMode), mIsContinuousEnabled);
         preferencesSaver.apply();
         Log.i(TAG, "Telephone and sensitivity saved.");
         saveButtonEnable(false);
@@ -184,6 +205,19 @@ public class Settings extends Activity implements View.OnClickListener, SeekBar.
     private void saveButtonEnable(boolean state) {
         Button saveButton =  (Button) findViewById(R.id.ButtonSave);
         saveButton.setEnabled(state);
+    }
+
+    public void modeToggle(View view){
+        ToggleButton modeToggle = (ToggleButton) view;
+
+        if(modeToggle.isChecked())
+            mIsContinuousEnabled = true;
+        else
+            mIsContinuousEnabled = false;
+
+        saveButtonEnable(true);
+
+        Log.v(TAG, "mode continuous changed to: " + mIsContinuousEnabled);
     }
 
     @Override

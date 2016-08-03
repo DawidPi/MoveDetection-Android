@@ -9,7 +9,11 @@
     <string name="validationOK">Ustawienia zostały zapisane.</string>
     <string name="keyTelNum">TelephoneNumber</string>
     <string name="keySensitivity">Sensitivity</string>
+    <string name="keyContinuousMode">ContinuousMode</string>
     <string name="defaultPhoneNumber">0</string>
     <string name="NotificationTitle">Wykrywacz drgań</string>
     <string name="NotificationText">Włączony</string>
+    <string name="SettingContinuousModeOn">Tryb ciągły</string>
+    <string name="SettingContinuousModeOff">Tryb pojedynczy</string>
+    <string name="ErrorCallPriviledges">Brak uprawnień do wykonywania połączeń</string>
 </resources>

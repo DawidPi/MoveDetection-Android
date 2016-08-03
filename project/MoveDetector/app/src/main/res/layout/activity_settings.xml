@@ -79,5 +79,17 @@
 
         </LinearLayout>
 
+        <ToggleButton
+            android:id="@+id/ModeSetting"
+            android:layout_above="@id/ButtonSave"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="100sp"
+            android:textOn="@string/SettingContinuousModeOn"
+            android:textOff="@string/SettingContinuousModeOff"
+            android:onClick="modeToggle"
+            />
+
+
     </RelativeLayout>
 </RelativeLayout>

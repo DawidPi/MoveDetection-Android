@@ -26,9 +26,11 @@ public class MotionSensorService extends Service implements SensorEventListener 
 
     public static final String IN_TEL_NUM = "com.projects.dawid.movedetector.IN_TEL_NUM";
     public static final String IN_SENSITIVITY = "com.projects.dawid.movedetector.IN_SENSITIVITY";
+    public static final String IN_CONTINUOUS = "com.projects.dawid.movedetector.IN_CONTINUOUS";
 
     private String mTelephoneNumber;
     private int mSensitivity;
+    private boolean mOneshotMode;
 
 
     @Nullable
@@ -48,6 +50,7 @@ public class MotionSensorService extends Service implements SensorEventListener 
 
         mTelephoneNumber = intent.getStringExtra(IN_TEL_NUM);
         mSensitivity = intent.getIntExtra(IN_SENSITIVITY, 0);
+        mOneshotMode = !intent.getBooleanExtra(IN_CONTINUOUS, false);
 
         if (mSensorManager == null) {
             mSensorManager = (SensorManager) getSystemService(SENSOR_SERVICE);
@@ -70,19 +73,21 @@ public class MotionSensorService extends Service implements SensorEventListener 
         double zAcc = Math.abs(sensorEvent.values[2]);
 
         double acceleration = Math.sqrt(xAcc * xAcc + yAcc * yAcc + zAcc * zAcc);
-
-        Log.v(TAG, "Acceleration value: " + acceleration);
-
         int compareValue = 10 - ((mSensitivity / 10) -1);
-        Log.v(TAG, "Sensitivity: " + mSensitivity);
-        Log.v(TAG, "Compare value: " + compareValue);
 
         if (acceleration >= compareValue) {
             makeACall();
-            mSensorManager.unregisterListener(this);
-            stopSelf();
+
+            if(mOneshotMode)
+                stopSelf();
         }
 
+    }
+
+    @Override
+    public void onDestroy() {
+        mSensorManager.unregisterListener(this);
+        super.onDestroy();
     }
 
     private void makeACall() {
@@ -91,7 +96,7 @@ public class MotionSensorService extends Service implements SensorEventListener 
         callIntent.addFlags(Intent.FLAG_FROM_BACKGROUND);
         callIntent.setData(Uri.parse("tel:" + mTelephoneNumber));
         if (ActivityCompat.checkSelfPermission(this, Manifest.permission.CALL_PHONE) != PackageManager.PERMISSION_GRANTED) {
-            Toast.makeText(this, "Brak uprawnień do wykonywania połączeń", Toast.LENGTH_LONG).show();
+            Toast.makeText(this, R.string.ErrorCallPriviledges, Toast.LENGTH_LONG).show();
             return;
         }
         startActivity(callIntent);
